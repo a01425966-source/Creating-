@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>App</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: #000; color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    max-width: 390px; margin: 0 auto; min-height: 100vh; overflow-x: hidden;
+  }
+  .screen { display: none; flex-direction: column; min-height: 100vh; animation: fadeUp 0.25s ease; }
+  .screen.active { display: flex; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+  .app-header { padding: 16px 20px 8px; position: relative; }
+  .header-row { display: flex; align-items: flex-start; justify-content: space-between; }
+  .section-label { font-size: 13px; color: #888; margin-bottom: 2px; }
+  .page-title { font-size: 30px; font-weight: 700; letter-spacing: -0.5px; }
+  .page-subtitle { font-size: 13px; color: #666; margin-top: 2px; }
+  .header-icons { display: flex; gap: 10px; padding-top: 4px; }
+  .icon-btn { width: 40px; height: 40px; background: #1c1c1e; border-radius: 50%; border: none; color: #fff; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+  .bottom-nav {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    width: calc(100% - 40px); max-width: 350px; background: #1c1c1e;
+    border-radius: 30px; display: flex; padding: 10px 6px; z-index: 200;
+  }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; color: #666; cursor: pointer; background: none; border: none; padding: 4px 0; transition: color 0.2s; }
+  .nav-item .nav-icon { font-size: 20px; line-height: 1; }
+
+  /* SHOP */
+  .impact-card { margin: 6px 20px 10px; background: linear-gradient(135deg,#0a3d1f,#0d4d28,#0a3d1f); border-radius: 18px; padding: 18px 20px; position: relative; overflow: hidden; }
+  .impact-label { font-size: 13px; color: #4cd964; display: flex; align-items: center; gap: 5px; margin-bottom: 6px; }
+  .impact-amount { font-size: 34px; font-weight: 700; }
+  .impact-sub { font-size: 13px; color: #aaa; margin-top: 2px; }
+  .impact-deco { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 56px; opacity: 0.4; }
+  .categories { display: flex; gap: 8px; padding: 4px 20px 10px; overflow-x: auto; scrollbar-width: none; }
+  .categories::-webkit-scrollbar { display: none; }
+  .cat-btn { padding: 7px 16px; border-radius: 20px; border: 1.5px solid #333; background: transparent; color: #fff; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+  .cat-btn.active { background: #4cd964; border-color: #4cd964; color: #000; font-weight: 700; }
+  .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px 110px; }
+  .product-card { background: #1c1c1e; border-radius: 16px; overflow: hidden; cursor: pointer; transition: transform 0.15s; position: relative; }
+  .product-card:active { transform: scale(0.96); }
+  .product-img-area { height: 110px; display: flex; align-items: center; justify-content: center; font-size: 52px; background: #252527; position: relative; }
+  .heart-btn { position: absolute; top: 7px; right: 7px; background: rgba(0,0,0,0.45); border: none; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; }
+  .product-info { padding: 9px 11px 12px; }
+  .product-name { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+  .product-seller { font-size: 11px; color: #777; margin-bottom: 4px; }
+  .product-price { font-size: 15px; font-weight: 700; color: #4cd964; }
+
+  /* DETAIL SHARED */
+  .detail-header { display: flex; align-items: center; padding: 16px 20px; gap: 12px; }
+  .back-btn { background: #1c1c1e; border: none; color: #fff; width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .detail-header-title { font-size: 17px; font-weight: 600; flex: 1; }
+  .detail-heart-btn { background: #1c1c1e; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; }
+  .detail-hero { margin: 0 20px; height: 220px; background: #1c1c1e; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 100px; }
+  .detail-thumbs { display: flex; gap: 10px; padding: 12px 20px; overflow-x: auto; scrollbar-width: none; }
+  .detail-thumbs::-webkit-scrollbar { display: none; }
+  .thumb { min-width: 64px; height: 64px; background: #1c1c1e; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; border: 2px solid transparent; cursor: pointer; transition: border-color 0.2s; }
+  .thumb.sel { border-color: #4cd964; }
+  .detail-body { padding: 4px 20px 0; }
+  .detail-pname { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+  .detail-seller-row { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+  .seller-dot { width: 7px; height: 7px; background: #4cd964; border-radius: 50%; }
+  .detail-seller-name { font-size: 13px; color: #888; }
+  .verified { font-size: 11px; color: #4cd964; margin-left: auto; }
+  .detail-price { font-size: 30px; font-weight: 700; color: #4cd964; margin-bottom: 12px; }
+  .detail-desc { font-size: 13px; color: #aaa; line-height: 1.6; margin-bottom: 14px; }
+  .tags { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 20px; }
+  .tag { background: #1c1c1e; border-radius: 20px; padding: 5px 12px; font-size: 11px; color: #888; }
+  .add-btn { margin: 0 20px 110px; background: #4cd964; color: #000; border: none; border-radius: 16px; padding: 15px; font-size: 15px; font-weight: 700; cursor: pointer; width: calc(100% - 40px); transition: transform 0.15s; }
+  .add-btn:active { transform: scale(0.97); }
+
+  /* LEARN */
+  .hero-banner { margin-bottom: 16px; background: linear-gradient(135deg,#7c3aed,#a855f7,#3b82f6); height: 200px; position: relative; overflow: hidden; display: flex; align-items: flex-end; padding: 20px; flex-shrink: 0; cursor: pointer; }
+  .hero-banner-deco { position: absolute; right: 20px; top: 10px; font-size: 100px; opacity: 0.4; }
+  .hero-label { display: inline-block; background: rgba(255,255,255,0.2); border-radius: 20px; padding: 4px 12px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .hero-title { font-size: 26px; font-weight: 800; margin-bottom: 3px; }
+  .hero-author { font-size: 13px; color: rgba(255,255,255,0.75); }
+  .section-title { font-size: 18px; font-weight: 700; padding: 0 20px; margin-bottom: 10px; }
+  .course-list { display: flex; flex-direction: column; gap: 10px; padding: 0 20px 110px; }
+  .course-card { background: #1c1c1e; border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: transform 0.15s; }
+  .course-card:active { transform: scale(0.97); }
+  .course-icon { width: 52px; height: 52px; background: #2c2c2e; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; }
+  .course-info { flex: 1; }
+  .course-name { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+  .course-author { font-size: 12px; color: #888; margin-bottom: 5px; }
+  .course-meta { display: flex; gap: 10px; font-size: 11px; color: #666; }
+  .play-btn { width: 36px; height: 36px; background: #a855f7; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; border: none; cursor: pointer; color: #fff; }
+
+  /* TRANSF */
+  .scanner-btn { margin: 6px 20px 16px; background: linear-gradient(135deg,#f97316,#ef4444); border-radius: 16px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border: none; color: #fff; width: calc(100% - 40px); transition: transform 0.15s; }
+  .scanner-btn:active { transform: scale(0.97); }
+  .scanner-title { font-size: 20px; font-weight: 800; margin-bottom: 3px; }
+  .scanner-sub { font-size: 12px; opacity: 0.8; }
+  .scanner-icon { font-size: 36px; }
+  .project-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px 110px; }
+  .project-card { background: #1c1c1e; border-radius: 16px; padding: 16px 14px 14px; cursor: pointer; transition: transform 0.15s; }
+  .project-card:active { transform: scale(0.96); }
+  .project-icon { width: 52px; height: 52px; background: #2c2c2e; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 10px; }
+  .project-name { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+  .project-footer { display: flex; align-items: center; justify-content: space-between; }
+  .difficulty { font-size: 11px; font-weight: 600; border-radius: 20px; padding: 3px 10px; }
+  .diff-easy { background: #166534; color: #4cd964; }
+  .diff-med { background: #713f12; color: #f59e0b; }
+  .diff-hard { background: #7f1d1d; color: #f87171; }
+  .bookmarks { font-size: 11px; color: #666; }
+
+  /* PERFIL */
+  .login-wrap { display: flex; flex-direction: column; align-items: center; padding: 30px 30px; gap: 12px; }
+  .login-avatar { font-size: 70px; margin-bottom: 8px; }
+  .login-title { font-size: 24px; font-weight: 700; }
+  .login-sub { font-size: 14px; color: #777; text-align: center; margin-bottom: 8px; }
+  .input-field { width: 100%; background: #1c1c1e; border: 1.5px solid #333; border-radius: 14px; padding: 14px 16px; font-size: 15px; color: #fff; outline: none; transition: border-color 0.2s; }
+  .input-field:focus { border-color: #4cd964; }
+  .login-btn { width: 100%; background: #4cd964; color: #000; border: none; border-radius: 14px; padding: 15px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 4px; }
+  .profile-header { display: flex; flex-direction: column; align-items: center; padding: 24px 20px 16px; gap: 6px; }
+  .profile-avatar-big { width: 88px; height: 88px; background: linear-gradient(135deg,#0d4d28,#4cd964); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; margin-bottom: 4px; }
+  .profile-name { font-size: 22px; font-weight: 700; }
+  .profile-handle { font-size: 13px; color: #777; }
+  .profile-stats { display: flex; margin: 10px 20px; background: #1c1c1e; border-radius: 16px; overflow: hidden; }
+  .stat-item { flex: 1; text-align: center; padding: 14px 10px; }
+  .stat-item:not(:last-child) { border-right: 1px solid #2c2c2e; }
+  .stat-val { font-size: 20px; font-weight: 700; color: #4cd964; }
+  .stat-label { font-size: 11px; color: #777; margin-top: 2px; }
+  .profile-section { margin: 6px 20px; }
+  .profile-section-title { font-size: 12px; color: #777; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 8px; text-transform: uppercase; }
+  .profile-item { background: #1c1c1e; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; cursor: pointer; }
+  .profile-item-icon { font-size: 20px; width: 24px; text-align: center; }
+  .profile-item-label { font-size: 15px; flex: 1; }
+  .profile-item-arrow { color: #555; font-size: 14px; }
+  .logout-btn { margin: 10px 20px 110px; background: #1c1c1e; color: #ff3b30; border: none; border-radius: 14px; padding: 15px; font-size: 15px; font-weight: 600; cursor: pointer; width: calc(100% - 40px); }
+</style>
+</head>
+<body>
+
+<!-- SHOP -->
+<div class="screen active" id="screen-shop">
+  <div class="app-header">
+    <div class="header-row">
+      <div><div class="page-title">Marketplace</div></div>
+      <div class="header-icons">
+        <button class="icon-btn">🔍</button>
+        <button class="icon-btn">👤</button>
+      </div>
+    </div>
+  </div>
+  <div class="impact-card">
+    <div class="impact-label">🌿 Impacto Local</div>
+    <div class="impact-amount">$12,450</div>
+    <div class="impact-sub">invertidos</div>
+    <div class="impact-deco">🌿</div>
+  </div>
+  <div class="categories">
+    <button class="cat-btn active" onclick="filterCat(this,'Todo')">Todo</button>
+    <button class="cat-btn" onclick="filterCat(this,'Artesanías')">Artesanías</button>
+    <button class="cat-btn" onclick="filterCat(this,'Comida')">Comida</button>
+    <button class="cat-btn" onclick="filterCat(this,'Ropa')">Ropa</button>
+    <button class="cat-btn" onclick="filterCat(this,'Arte')">Arte</button>
+  </div>
+  <div class="product-grid" id="product-grid"></div>
+  <nav class="bottom-nav">
+    <button class="nav-item" style="color:#4cd964" onclick="switchTab('shop')"><span class="nav-icon">🛍️</span>Shop</button>
+    <button class="nav-item" onclick="switchTab('learn')"><span class="nav-icon">📖</span>Learn</button>
+    <button class="nav-item" onclick="switchTab('transf')"><span class="nav-icon">♻️</span>Transf.</button>
+    <button class="nav-item" onclick="switchTab('perfil')"><span class="nav-icon">👤</span>Perfil</button>
+  </nav>
+</div>
+
+<!-- PRODUCT DETAIL -->
+<div class="screen" id="screen-detail">
+  <div class="detail-header">
+    <button class="back-btn" onclick="showScreen('shop')">←</button>
+    <span class="detail-header-title" id="d-title"></span>
+    <button class="detail-heart-btn" id="d-heart" onclick="toggleDetailHeart()">🤍</button>
+  </div>
+  <div class="detail-hero" id="d-hero"></div>
+  <div class="detail-thumbs" id="d-thumbs"></div>
+  <div class="detail-body">
+    <div class="detail-pname" id="d-name"></div>
+    <div class="detail-seller-row"><div class="seller-dot"></div><span class="detail-seller-name" id="d-seller"></span><span class="verified">✓ Verificado</span></div>
+    <div class="detail-price" id="d-price"></div>
+    <div class="detail-desc" id="d-desc"></div>
+    <div class="tags" id="d-tags"></div>
+  </div>
+  <button class="add-btn" id="add-cart-btn" onclick="addToCart()">🛒 Agregar al carrito</button>
+  <nav class="bottom-nav">
+    <button class="nav-item" style="color:#4cd964" onclick="showScreen('shop')"><span class="nav-icon">🛍️</span>Shop</button>
+    <button class="nav-item" onclick="switchTab('learn')"><span class="nav-icon">📖</span>Learn</button>
+    <button class="nav-item" onclick="switchTab('transf')"><span class="nav-icon">♻️</span>Transf.</button>
+    <button class="nav-item" onclick="switchTab('perfil')"><span class="nav-icon">👤</span>Perfil</button>
+  </nav>
+</div>
+
+<!-- LEARN -->
+<div class="screen" id="screen-learn">
+  <div class="app-header">
+    <div class="header-row">
+      <div><div class="section-label">Academia</div></div>
+      <div class="header-icons"><button class="icon-btn">🔍</button><button class="icon-btn">👤</button></div>
+    </div>
+  </div>
+  <div class="hero-banner" onclick="openCourse({name:'Reparar Ropa',author:'Ana López',icon:'🧵',duration:'3 hrs',level:'Básico',desc:'Aprende las técnicas esenciales para reparar y remendar todo tipo de ropa. Desde costuras básicas hasta parches decorativos.'})">
+    <div class="hero-banner-deco">🧵</div>
+    <div><div class="hero-label">RECOMENDADO</div><div class="hero-title">Reparar Ropa</div><div class="hero-author">con Ana López</div></div>
+  </div>
+  <div class="section-title">Populares ahora</div>
+  <div class="course-list" id="course-list"></div>
+  <nav class="bottom-nav">
+    <button class="nav-item" onclick="switchTab('shop')"><span class="nav-icon">🛍️</span>Shop</button>
+    <button class="nav-item" style="color:#a855f7" onclick="switchTab('learn')"><span class="nav-icon">📖</span>Learn</button>
+    <button class="nav-item" onclick="switchTab('transf')"><span class="nav-icon">♻️</span>Transf.</button>
+    <button class="nav-item" onclick="switchTab('perfil')"><span class="nav-icon">👤</span>Perfil</button>
+  </nav>
+</div>
+
+<!-- COURSE DETAIL -->
+<div class="screen" id="screen-course">
+  <div class="detail-header">
+    <button class="back-btn" onclick="showScreen('learn')">←</button>
+    <span class="detail-header-title" id="c-title"></span>
+  </div>
+  <div class="detail-hero" id="c-hero" style="background:linear-gradient(135deg,#2d1b69,#4c1d95)"></div>
+  <div class="detail-body">
+    <div class="detail-pname" id="c-name"></div>
+    <div class="detail-seller-row"><div class="seller-dot" style="background:#a855f7"></div><span class="detail-seller-name" id="c-author"></span></div>
+    <div style="display:flex;gap:14px;margin-bottom:14px;"><span id="c-dur" style="font-size:13px;color:#888"></span><span id="c-lvl" style="font-size:13px;color:#888"></span></div>
+    <div class="detail-desc" id="c-desc"></div>
+  </div>
+  <button class="add-btn" id="course-btn" style="background:#a855f7;" onclick="startCourse()">▶ Comenzar curso</button>
+  <nav class="bottom-nav">
+    <button class="nav-item" onclick="switchTab('shop')"><span class="nav-icon">🛍️</span>Shop</button>
+    <button class="nav-item" style="color:#a855f7" onclick="showScreen('learn')"><span class="nav-icon">📖</span>Learn</button>
+    <button class="nav-item" onclick="switchTab('transf')"><span class="nav-icon">♻️</span>Transf.</button>
+    <button class="nav-item" onclick="switchTab('perfil')"><span class="nav-icon">👤</span>Perfil</button>
+  </nav>
+</div>
+
+<!-- TRANSF -->
+<div class="screen" id="screen-transf">
+  <div class="app-header">
+    <div class="header-row">
+      <div><div class="section-label">Reciclaje</div><div class="page-title">Lab de Reciclaje</div><div class="page-subtitle">Ingeniería aplicada al residuo</div></div>
+      <div class="header-icons"><button class="icon-btn">🔍</button><button class="icon-btn">👤</button></div>
+    </div>
+  </div>
+  <button class="scanner-btn" onclick="alert('📷 Escáner IA\n\nAquí se abriría la cámara para identificar el tipo de material reciclable.')">
+    <div style="text-align:left;"><div class="scanner-title">Escáner IA</div><div class="scanner-sub">Identifica PET, HDPE, PVC...</div></div>
+    <div class="scanner-icon">📷</div>
+  </button>
+  <div class="section-title">Planos y Proyectos</div>
+  <div class="project-grid" id="project-grid"></div>
+  <nav class="bottom-nav">
+    <button class="nav-item" onclick="switchTab('shop')"><span class="nav-icon">🛍️</span>Shop</button>
+    <button class="nav-item" onclick="switchTab('learn')"><span class="nav-icon">📖</span>Learn</button>
+    <button class="nav-item" style="color:#f97316" onclick="switchTab('transf')"><span class="nav-icon">♻️</span>Transf.</button>
+    <button class="nav-item" onclick="switchTab('perfil')"><span class="nav-icon">👤</span>Perfil</button>
+  </nav>
+</div>
+
+<!-- PROJECT DETAIL -->
+<div class="screen" id="screen-project">
+  <div class="detail-header">
+    <button class="back-btn" onclick="showScreen('transf')">←</button>
+    <span class="detail-header-title" id="p-title"></span>
+  </div>
+  <div class="detail-hero" id="p-hero" style="background:linear-gradient(135deg,#1c1c1e,#2c2c2e)"></div>
+  <div class="detail-body">
+    <div class="detail-pname" id="p-name"></div>
+    <div style="margin-bottom:10px;" id="p-badge"></div>
+    <div style="font-size:13px;color:#888;margin-bottom:12px;" id="p-bkm"></div>
+    <div class="detail-desc" id="p-desc"></div>
+    <div class="tags" id="p-tags"></div>
+  </div>
+  <button class="add-btn" id="proj-btn" style="background:#f97316;" onclick="startProject()">🔧 Ver instrucciones</button>
+  <nav class="bottom-nav">
+    <button class="nav-item" onclick="switchTab('shop')"><span class="nav-icon">🛍️</span>Shop</button>
+    <button class="nav-item" onclick="switchTab('learn')"><span class="nav-icon">📖</span>Learn</button>
+    <button class="nav-item" style="color:#f97316" onclick="showScreen('transf')"><span class="nav-icon">♻️</span>Transf.</button>
+    <button class="nav-item" onclick="switchTab('perfil')"><span class="nav-icon">👤</span>Perfil</button>
+  </nav>
+</div>
+
+<!-- PERFIL -->
+<div class="screen" id="screen-perfil">
+  <div class="app-header">
+    <div class="header-row">
+      <div><div class="page-title">Perfil</div></div>
+      <div class="header-icons" id="perfil-settings" style="display:none;"><button class="icon-btn">⚙️</button></div>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div id="login-state">
+    <div class="login-wrap">
+      <div class="login-avatar">👤</div>
+      <div class="login-title">Bienvenido</div>
+      <div class="login-sub">Crea tu cuenta para acceder a tu perfil y actividad</div>
+      <input class="input-field" id="inp-name" type="text" placeholder="Tu nombre completo" />
+      <input class="input-field" id="inp-email" type="email" placeholder="Correo electrónico" />
+      <input class="input-field" id="inp-pass" type="password" placeholder="Contraseña" />
+      <button class="login-btn" onclick="doLogin()">Iniciar sesión</button>
+    </div>
+  </div>
+
+  <!-- LOGGED -->
+  <div id="logged-state" style="display:none;">
+    <div class="profile-header">
+      <div class="profile-avatar-big">👤</div>
+      <div class="profile-name" id="prof-name">Usuario</div>
+      <div class="profile-handle" id="prof-handle">@usuario</div>
+    </div>
+    <div class="profile-stats">
+      <div class="stat-item"><div class="stat-val">12</div><div class="stat-label">Compras</div></div>
+      <div class="stat-item"><div class="stat-val">5</div><div class="stat-label">Cursos</div></div>
+      <div class="stat-item"><div class="stat-val">8</div><div class="stat-label">Proyectos</div></div>
+    </div>
+    <div class="profile-section" style="margin-top:14px;">
+      <div class="profile-section-title">Mi cuenta</div>
+      <div class="profile-item"><span class="profile-item-icon">❤️</span><span class="profile-item-label">Mis favoritos</span><span class="profile-item-arrow">›</span></div>
+      <div class="profile-item"><span class="profile-item-icon">📦</span><span class="profile-item-label">Mis pedidos</span><span class="profile-item-arrow">›</span></div>
+      <div class="profile-item"><span class="profile-item-icon">🎓</span><span class="profile-item-label">Mis cursos</span><span class="profile-item-arrow">›</span></div>
+    </div>
+    <div class="profile-section">
+      <div class="profile-section-title">Preferencias</div>
+      <div class="profile-item"><span class="profile-item-icon">🔔</span><span class="profile-item-label">Notificaciones</span><span class="profile-item-arrow">›</span></div>
+      <div class="profile-item"><span class="profile-item-icon">🌿</span><span class="profile-item-label">Impacto ambiental</span><span class="profile-item-arrow">›</span></div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">Cerrar sesión</button>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-item" onclick="switchTab('shop')"><span class="nav-icon">🛍️</span>Shop</button>
+    <button class="nav-item" onclick="switchTab('learn')"><span class="nav-icon">📖</span>Learn</button>
+    <button class="nav-item" onclick="switchTab('transf')"><span class="nav-icon">♻️</span>Transf.</button>
+    <button class="nav-item" style="color:#4cd964" onclick="switchTab('perfil')"><span class="nav-icon">👤</span>Perfil</button>
+  </nav>
+</div>
+
+<script>
+const products = [
+  {id:1,name:"Macetas de Cerámica",seller:"María Artesana",price:"$180",category:"Artesanías",emoji:"🏺",thumbs:["🏺","🫙","🪴","🎨"],desc:"Hermosas macetas hechas a mano con arcilla local. Cada pieza es única, horneada en horno tradicional. Perfectas para interior y exterior.",tags:["Hecho a mano","Arcilla local","Único","Artesanal"]},
+  {id:2,name:"Miel Orgánica Local",seller:"Apiario Verde",price:"$95",category:"Comida",emoji:"🍯",thumbs:["🍯","🌻","🐝","🌿"],desc:"Miel 100% orgánica extraída de colmenas locales. Sin procesar, con todos sus nutrientes naturales intactos. Sabor floral y suave.",tags:["Orgánica","Sin procesar","Local","Natural"]},
+  {id:3,name:"Bolsas Tejidas",seller:"Telares del Sur",price:"$320",category:"Ropa",emoji:"👜",thumbs:["👜","🧶","🪡","🎀"],desc:"Bolsas tejidas a mano con técnicas ancestrales de telar. Materiales naturales de fibra resistente. Cada bolsa toma 3 días de trabajo.",tags:["Tejida a mano","Fibra natural","Ancestral","Durable"]},
+  {id:4,name:"Pan Artesanal",seller:"Horno Tradicional",price:"$65",category:"Comida",emoji:"🥖",thumbs:["🥖","🌾","🧁","🍞"],desc:"Pan de masa madre con granos locales y fermentación natural de 24 horas. Horneado en horno de leña, corteza crujiente.",tags:["Masa madre","Horno leña","Sin conservadores","Local"]}
+];
+const courses = [
+  {name:"Muebles con Pallets",author:"Carlos Ruiz",icon:"🪑",duration:"2 hrs",level:"Intermedio",desc:"Aprende a construir muebles funcionales con pallets reciclados. Incluye técnicas de lijado, ensamblado y acabado natural."},
+  {name:"Electrónica Básica",author:"Tech María",icon:"⚡",duration:"1.5 hrs",level:"Básico",desc:"Fundamentos de electrónica para principiantes. Aprende a soldar, leer circuitos y reparar aparatos del hogar."},
+  {name:"Huerto en Casa",author:"Verde Jardín",icon:"🌱",duration:"1 hr",level:"Básico",desc:"Crea tu propio huerto urbano en espacios pequeños. Cultiva tus propias verduras y hierbas aromáticas fácilmente."}
+];
+const projects = [
+  {id:1,name:"Lámpara PET",emoji:"💡",difficulty:"Fácil",diffClass:"diff-easy",bookmarks:89,desc:"Transforma botellas PET en una lámpara decorativa única. Materiales: botellas PET, cable eléctrico, foco LED y pegamento termofusible.",tags:["PET","Iluminación","Reciclaje"]},
+  {id:2,name:"Mesa Neumáticos",emoji:"🛞",difficulty:"Medio",diffClass:"diff-med",bookmarks:156,desc:"Convierte neumáticos usados en una mesa de centro original. Limpiar, pintar, apilar y agregar superficie de vidrio o madera.",tags:["Neumáticos","Mueble","Upcycling"]},
+  {id:3,name:"Robot de Latas",emoji:"🤖",difficulty:"Avanzado",diffClass:"diff-hard",bookmarks:234,desc:"Construye un robot decorativo con latas recicladas. Requiere soldadura básica y creatividad para el diseño de las piezas.",tags:["Latas","Soldadura","Arte"]},
+  {id:4,name:"Maceta Smart",emoji:"🌿",difficulty:"Medio",diffClass:"diff-med",bookmarks:178,desc:"Maceta con sensor de humedad usando material reciclado. Incluye Arduino básico y botella PET cortada para el contenedor.",tags:["Electrónica","PET","Jardín"]}
+];
+
+let liked = {};
+let currentProduct = null;
+let currentFilter = 'Todo';
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function switchTab(tab) { showScreen(tab); }
+
+// SHOP
+function renderGrid(filter) {
+  const list = filter==='Todo' ? products : products.filter(p=>p.category===filter);
+  document.getElementById('product-grid').innerHTML = list.map(p=>`
+    <div class="product-card" onclick="openProduct(${p.id})">
+      <div class="product-img-area">${p.emoji}
+        <button class="heart-btn" onclick="toggleHeart(event,${p.id})">${liked[p.id]?'❤️':'🤍'}</button>
+      </div>
+      <div class="product-info">
+        <div class="product-name">${p.name}</div>
+        <div class="product-seller">${p.seller}</div>
+        <div class="product-price">${p.price}</div>
+      </div>
+    </div>`).join('');
+}
+function filterCat(btn,cat){
+  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); currentFilter=cat; renderGrid(cat);
+}
+function toggleHeart(e,id){ e.stopPropagation(); liked[id]=!liked[id]; renderGrid(currentFilter); }
+function openProduct(id){
+  const p=products.find(x=>x.id===id); currentProduct=p;
+  document.getElementById('d-title').textContent=p.name;
+  document.getElementById('d-hero').textContent=p.emoji;
+  document.getElementById('d-name').textContent=p.name;
+  document.getElementById('d-seller').textContent=p.seller;
+  document.getElementById('d-price').textContent=p.price;
+  document.getElementById('d-desc').textContent=p.desc;
+  document.getElementById('d-heart').textContent=liked[id]?'❤️':'🤍';
+  document.getElementById('d-thumbs').innerHTML=p.thumbs.map((t,i)=>`<div class="thumb ${i===0?'sel':''}" onclick="selThumb(this,'${t}')">${t}</div>`).join('');
+  document.getElementById('d-tags').innerHTML=p.tags.map(t=>`<div class="tag">${t}</div>`).join('');
+  showScreen('detail');
+}
+function selThumb(el,e){document.querySelectorAll('.thumb').forEach(t=>t.classList.remove('sel'));el.classList.add('sel');document.getElementById('d-hero').textContent=e;}
+function toggleDetailHeart(){if(!currentProduct)return;liked[currentProduct.id]=!liked[currentProduct.id];document.getElementById('d-heart').textContent=liked[currentProduct.id]?'❤️':'🤍';}
+function addToCart(){const b=document.getElementById('add-cart-btn');b.textContent='✅ ¡Agregado!';b.style.background='#0a3d1f';b.style.color='#4cd964';setTimeout(()=>{b.textContent='🛒 Agregar al carrito';b.style.background='#4cd964';b.style.color='#000';},1800);}
+
+// LEARN
+function renderCourses(){
+  document.getElementById('course-list').innerHTML=courses.map(c=>`
+    <div class="course-card" onclick='openCourse(${JSON.stringify(c)})'>
+      <div class="course-icon">${c.icon}</div>
+      <div class="course-info">
+        <div class="course-name">${c.name}</div>
+        <div class="course-author">${c.author}</div>
+        <div class="course-meta"><span>⏱ ${c.duration}</span><span>📊 ${c.level}</span></div>
+      </div>
+      <button class="play-btn">▶</button>
+    </div>`).join('');
+}
+function openCourse(c){
+  if(typeof c==='string')c=JSON.parse(c);
+  document.getElementById('c-title').textContent=c.name;
+  document.getElementById('c-hero').textContent=c.icon||'📚';
+  document.getElementById('c-name').textContent=c.name;
+  document.getElementById('c-author').textContent=c.author;
+  document.getElementById('c-dur').textContent='⏱ '+(c.duration||'');
+  document.getElementById('c-lvl').textContent='📊 '+(c.level||'');
+  document.getElementById('c-desc').textContent=c.desc;
+  showScreen('course');
+}
+function startCourse(){const b=document.getElementById('course-btn');b.textContent='✅ ¡Inscrito!';setTimeout(()=>{b.textContent='▶ Comenzar curso';},1800);}
+
+// TRANSF
+function renderProjects(){
+  document.getElementById('project-grid').innerHTML=projects.map(p=>`
+    <div class="project-card" onclick="openProject(${p.id})">
+      <div class="project-icon">${p.emoji}</div>
+      <div class="project-name">${p.name}</div>
+      <div class="project-footer">
+        <span class="difficulty ${p.diffClass}">${p.difficulty}</span>
+        <span class="bookmarks">🔖 ${p.bookmarks}</span>
+      </div>
+    </div>`).join('');
+}
+function openProject(id){
+  const p=projects.find(x=>x.id===id);
+  document.getElementById('p-title').textContent=p.name;
+  document.getElementById('p-hero').textContent=p.emoji;
+  document.getElementById('p-name').textContent=p.name;
+  document.getElementById('p-badge').innerHTML=`<span class="difficulty ${p.diffClass}">${p.difficulty}</span>`;
+  document.getElementById('p-bkm').textContent='🔖 '+p.bookmarks+' guardados';
+  document.getElementById('p-desc').textContent=p.desc;
+  document.getElementById('p-tags').innerHTML=p.tags.map(t=>`<div class="tag">${t}</div>`).join('');
+  showScreen('project');
+}
+function startProject(){const b=document.getElementById('proj-btn');b.textContent='✅ ¡Guardado!';setTimeout(()=>{b.textContent='🔧 Ver instrucciones';},1800);}
+
+// PERFIL
+function doLogin(){
+  const name=document.getElementById('inp-name').value.trim();
+  const email=document.getElementById('inp-email').value.trim();
+  if(!name){document.getElementById('inp-name').focus();document.getElementById('inp-name').style.borderColor='#ff3b30';return;}
+  if(!email){document.getElementById('inp-email').focus();document.getElementById('inp-email').style.borderColor='#ff3b30';return;}
+  document.getElementById('prof-name').textContent=name;
+  document.getElementById('prof-handle').textContent='@'+name.toLowerCase().replace(/\s+/g,'');
+  document.getElementById('login-state').style.display='none';
+  document.getElementById('logged-state').style.display='block';
+  document.getElementById('perfil-settings').style.display='flex';
+}
+function doLogout(){
+  document.getElementById('login-state').style.display='block';
+  document.getElementById('logged-state').style.display='none';
+  document.getElementById('perfil-settings').style.display='none';
+  ['inp-name','inp-email','inp-pass'].forEach(id=>{const el=document.getElementById(id);el.value='';el.style.borderColor='#333';});
+}
+
+// INIT
+renderGrid('Todo');
+renderCourses();
+renderProjects();
+</script>
+</body>
+</html>
