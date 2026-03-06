@@ -2,155 +2,216 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>App</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Marketplace">
+<title>Marketplace Local</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+
+<!-- Firebase v10 (modular via CDN compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  body {
-    background: #000; color: #fff;
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-    max-width: 390px; margin: 0 auto; min-height: 100vh; overflow-x: hidden;
-  }
-  .screen { display: none; flex-direction: column; min-height: 100vh; animation: fadeUp 0.25s ease; }
-  .screen.active { display: flex; }
-  @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+  background:#000; color:#fff;
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;
+  max-width:390px; margin:0 auto; min-height:100vh; overflow-x:hidden;
+}
+.screen { display:none; flex-direction:column; min-height:100vh; animation:fadeUp 0.25s ease; }
+.screen.active { display:flex; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)} }
 
-  .app-header { padding: 16px 20px 8px; position: relative; }
-  .header-row { display: flex; align-items: flex-start; justify-content: space-between; }
-  .section-label { font-size: 13px; color: #888; margin-bottom: 2px; }
-  .page-title { font-size: 30px; font-weight: 700; letter-spacing: -0.5px; }
-  .page-subtitle { font-size: 13px; color: #666; margin-top: 2px; }
-  .header-icons { display: flex; gap: 10px; padding-top: 4px; }
-  .icon-btn { width: 40px; height: 40px; background: #1c1c1e; border-radius: 50%; border: none; color: #fff; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+/* HEADER */
+.app-header { padding:16px 20px 8px; position:relative; }
+.header-row { display:flex; align-items:flex-start; justify-content:space-between; }
+.section-label { font-size:13px; color:#888; margin-bottom:2px; }
+.page-title { font-size:30px; font-weight:700; letter-spacing:-0.5px; }
+.page-subtitle { font-size:13px; color:#666; margin-top:2px; }
+.header-icons { display:flex; gap:10px; padding-top:4px; }
+.icon-btn { width:40px;height:40px;background:#1c1c1e;border-radius:50%;border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center; }
 
-  .bottom-nav {
-    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-    width: calc(100% - 40px); max-width: 350px; background: #1c1c1e;
-    border-radius: 30px; display: flex; padding: 10px 6px; z-index: 200;
-  }
-  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; color: #666; cursor: pointer; background: none; border: none; padding: 4px 0; transition: color 0.2s; }
-  .nav-item .nav-icon { font-size: 20px; line-height: 1; }
+/* NAV */
+.bottom-nav {
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  width:calc(100% - 40px);max-width:350px;background:#1c1c1e;
+  border-radius:30px;display:flex;padding:10px 6px;z-index:200;
+}
+.nav-item { flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;color:#666;cursor:pointer;background:none;border:none;padding:4px 0;transition:color 0.2s; }
+.nav-item .nav-icon { font-size:20px;line-height:1; }
 
-  /* SHOP */
-  .impact-card { margin: 6px 20px 10px; background: linear-gradient(135deg,#0a3d1f,#0d4d28,#0a3d1f); border-radius: 18px; padding: 18px 20px; position: relative; overflow: hidden; }
-  .impact-label { font-size: 13px; color: #4cd964; display: flex; align-items: center; gap: 5px; margin-bottom: 6px; }
-  .impact-amount { font-size: 34px; font-weight: 700; }
-  .impact-sub { font-size: 13px; color: #aaa; margin-top: 2px; }
-  .impact-deco { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 56px; opacity: 0.4; }
-  .categories { display: flex; gap: 8px; padding: 4px 20px 10px; overflow-x: auto; scrollbar-width: none; }
-  .categories::-webkit-scrollbar { display: none; }
-  .cat-btn { padding: 7px 16px; border-radius: 20px; border: 1.5px solid #333; background: transparent; color: #fff; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
-  .cat-btn.active { background: #4cd964; border-color: #4cd964; color: #000; font-weight: 700; }
-  .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px 110px; }
-  .product-card { background: #1c1c1e; border-radius: 16px; overflow: hidden; cursor: pointer; transition: transform 0.15s; position: relative; }
-  .product-card:active { transform: scale(0.96); }
-  .product-img-area { height: 110px; display: flex; align-items: center; justify-content: center; font-size: 52px; background: #252527; position: relative; }
-  .heart-btn { position: absolute; top: 7px; right: 7px; background: rgba(0,0,0,0.45); border: none; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; }
-  .product-info { padding: 9px 11px 12px; }
-  .product-name { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
-  .product-seller { font-size: 11px; color: #777; margin-bottom: 4px; }
-  .product-price { font-size: 15px; font-weight: 700; color: #4cd964; }
+/* TOAST */
+.toast {
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:#1c1c1e;color:#fff;padding:10px 20px;border-radius:20px;
+  font-size:13px;font-weight:500;z-index:999;opacity:0;transition:all 0.3s;
+  pointer-events:none;white-space:nowrap;border:1px solid #333;
+}
+.toast.show { opacity:1;transform:translateX(-50%) translateY(0); }
 
-  /* DETAIL SHARED */
-  .detail-header { display: flex; align-items: center; padding: 16px 20px; gap: 12px; }
-  .back-btn { background: #1c1c1e; border: none; color: #fff; width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-  .detail-header-title { font-size: 17px; font-weight: 600; flex: 1; }
-  .detail-heart-btn { background: #1c1c1e; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; }
-  .detail-hero { margin: 0 20px; height: 220px; background: #1c1c1e; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 100px; }
-  .detail-thumbs { display: flex; gap: 10px; padding: 12px 20px; overflow-x: auto; scrollbar-width: none; }
-  .detail-thumbs::-webkit-scrollbar { display: none; }
-  .thumb { min-width: 64px; height: 64px; background: #1c1c1e; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; border: 2px solid transparent; cursor: pointer; transition: border-color 0.2s; }
-  .thumb.sel { border-color: #4cd964; }
-  .detail-body { padding: 4px 20px 0; }
-  .detail-pname { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
-  .detail-seller-row { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
-  .seller-dot { width: 7px; height: 7px; background: #4cd964; border-radius: 50%; }
-  .detail-seller-name { font-size: 13px; color: #888; }
-  .verified { font-size: 11px; color: #4cd964; margin-left: auto; }
-  .detail-price { font-size: 30px; font-weight: 700; color: #4cd964; margin-bottom: 12px; }
-  .detail-desc { font-size: 13px; color: #aaa; line-height: 1.6; margin-bottom: 14px; }
-  .tags { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 20px; }
-  .tag { background: #1c1c1e; border-radius: 20px; padding: 5px 12px; font-size: 11px; color: #888; }
-  .add-btn { margin: 0 20px 110px; background: #4cd964; color: #000; border: none; border-radius: 16px; padding: 15px; font-size: 15px; font-weight: 700; cursor: pointer; width: calc(100% - 40px); transition: transform 0.15s; }
-  .add-btn:active { transform: scale(0.97); }
+/* LOADING */
+.loading-overlay {
+  position:fixed;inset:0;background:#000;z-index:1000;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;
+  transition:opacity 0.4s;
+}
+.loading-overlay.hidden { opacity:0;pointer-events:none; }
+.loading-logo { font-size:60px; animation:pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{transform:scale(1)}50%{transform:scale(1.1)} }
+.loading-text { font-size:22px;font-weight:700;color:#4cd964; }
+.loading-sub { font-size:13px;color:#666; }
 
-  /* LEARN */
-  .hero-banner { margin-bottom: 16px; background: linear-gradient(135deg,#7c3aed,#a855f7,#3b82f6); height: 200px; position: relative; overflow: hidden; display: flex; align-items: flex-end; padding: 20px; flex-shrink: 0; cursor: pointer; }
-  .hero-banner-deco { position: absolute; right: 20px; top: 10px; font-size: 100px; opacity: 0.4; }
-  .hero-label { display: inline-block; background: rgba(255,255,255,0.2); border-radius: 20px; padding: 4px 12px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 6px; }
-  .hero-title { font-size: 26px; font-weight: 800; margin-bottom: 3px; }
-  .hero-author { font-size: 13px; color: rgba(255,255,255,0.75); }
-  .section-title { font-size: 18px; font-weight: 700; padding: 0 20px; margin-bottom: 10px; }
-  .course-list { display: flex; flex-direction: column; gap: 10px; padding: 0 20px 110px; }
-  .course-card { background: #1c1c1e; border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: transform 0.15s; }
-  .course-card:active { transform: scale(0.97); }
-  .course-icon { width: 52px; height: 52px; background: #2c2c2e; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; }
-  .course-info { flex: 1; }
-  .course-name { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
-  .course-author { font-size: 12px; color: #888; margin-bottom: 5px; }
-  .course-meta { display: flex; gap: 10px; font-size: 11px; color: #666; }
-  .play-btn { width: 36px; height: 36px; background: #a855f7; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; border: none; cursor: pointer; color: #fff; }
+/* FIREBASE SETUP BANNER */
+.firebase-banner {
+  background:#1a1a2e;border:1px solid #4cd964;border-radius:14px;
+  padding:14px 16px;margin:10px 20px;font-size:12px;color:#aaa;line-height:1.6;
+}
+.firebase-banner strong { color:#4cd964;display:block;margin-bottom:4px;font-size:13px; }
+.firebase-banner code { color:#fff;background:#2c2c2e;padding:1px 6px;border-radius:4px;font-size:11px; }
 
-  /* TRANSF */
-  .scanner-btn { margin: 6px 20px 16px; background: linear-gradient(135deg,#f97316,#ef4444); border-radius: 16px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border: none; color: #fff; width: calc(100% - 40px); transition: transform 0.15s; }
-  .scanner-btn:active { transform: scale(0.97); }
-  .scanner-title { font-size: 20px; font-weight: 800; margin-bottom: 3px; }
-  .scanner-sub { font-size: 12px; opacity: 0.8; }
-  .scanner-icon { font-size: 36px; }
-  .project-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px 110px; }
-  .project-card { background: #1c1c1e; border-radius: 16px; padding: 16px 14px 14px; cursor: pointer; transition: transform 0.15s; }
-  .project-card:active { transform: scale(0.96); }
-  .project-icon { width: 52px; height: 52px; background: #2c2c2e; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 10px; }
-  .project-name { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
-  .project-footer { display: flex; align-items: center; justify-content: space-between; }
-  .difficulty { font-size: 11px; font-weight: 600; border-radius: 20px; padding: 3px 10px; }
-  .diff-easy { background: #166534; color: #4cd964; }
-  .diff-med { background: #713f12; color: #f59e0b; }
-  .diff-hard { background: #7f1d1d; color: #f87171; }
-  .bookmarks { font-size: 11px; color: #666; }
+/* SHOP */
+.impact-card { margin:6px 20px 10px;background:linear-gradient(135deg,#0a3d1f,#0d4d28,#0a3d1f);border-radius:18px;padding:18px 20px;position:relative;overflow:hidden; }
+.impact-label { font-size:13px;color:#4cd964;display:flex;align-items:center;gap:5px;margin-bottom:6px; }
+.impact-amount { font-size:34px;font-weight:700; }
+.impact-sub { font-size:13px;color:#aaa;margin-top:2px; }
+.impact-deco { position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:56px;opacity:0.4; }
+.categories { display:flex;gap:8px;padding:4px 20px 10px;overflow-x:auto;scrollbar-width:none; }
+.categories::-webkit-scrollbar { display:none; }
+.cat-btn { padding:7px 16px;border-radius:20px;border:1.5px solid #333;background:transparent;color:#fff;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;transition:all 0.2s; }
+.cat-btn.active { background:#4cd964;border-color:#4cd964;color:#000;font-weight:700; }
+.product-grid { display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 20px 110px; }
+.product-card { background:#1c1c1e;border-radius:16px;overflow:hidden;cursor:pointer;transition:transform 0.15s;position:relative; }
+.product-card:active { transform:scale(0.96); }
+.product-img-area { height:110px;display:flex;align-items:center;justify-content:center;font-size:52px;background:#252527;position:relative; }
+.heart-btn { position:absolute;top:7px;right:7px;background:rgba(0,0,0,0.45);border:none;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px; }
+.product-info { padding:9px 11px 12px; }
+.product-name { font-size:14px;font-weight:600;margin-bottom:2px; }
+.product-seller { font-size:11px;color:#777;margin-bottom:4px; }
+.product-price { font-size:15px;font-weight:700;color:#4cd964; }
 
-  /* PERFIL */
-  .login-wrap { display: flex; flex-direction: column; align-items: center; padding: 30px 30px; gap: 12px; }
-  .login-avatar { font-size: 70px; margin-bottom: 8px; }
-  .login-title { font-size: 24px; font-weight: 700; }
-  .login-sub { font-size: 14px; color: #777; text-align: center; margin-bottom: 8px; }
-  .input-field { width: 100%; background: #1c1c1e; border: 1.5px solid #333; border-radius: 14px; padding: 14px 16px; font-size: 15px; color: #fff; outline: none; transition: border-color 0.2s; }
-  .input-field:focus { border-color: #4cd964; }
-  .login-btn { width: 100%; background: #4cd964; color: #000; border: none; border-radius: 14px; padding: 15px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 4px; }
-  .profile-header { display: flex; flex-direction: column; align-items: center; padding: 24px 20px 16px; gap: 6px; }
-  .profile-avatar-big { width: 88px; height: 88px; background: linear-gradient(135deg,#0d4d28,#4cd964); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; margin-bottom: 4px; }
-  .profile-name { font-size: 22px; font-weight: 700; }
-  .profile-handle { font-size: 13px; color: #777; }
-  .profile-stats { display: flex; margin: 10px 20px; background: #1c1c1e; border-radius: 16px; overflow: hidden; }
-  .stat-item { flex: 1; text-align: center; padding: 14px 10px; }
-  .stat-item:not(:last-child) { border-right: 1px solid #2c2c2e; }
-  .stat-val { font-size: 20px; font-weight: 700; color: #4cd964; }
-  .stat-label { font-size: 11px; color: #777; margin-top: 2px; }
-  .profile-section { margin: 6px 20px; }
-  .profile-section-title { font-size: 12px; color: #777; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 8px; text-transform: uppercase; }
-  .profile-item { background: #1c1c1e; border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; cursor: pointer; }
-  .profile-item-icon { font-size: 20px; width: 24px; text-align: center; }
-  .profile-item-label { font-size: 15px; flex: 1; }
-  .profile-item-arrow { color: #555; font-size: 14px; }
-  .logout-btn { margin: 10px 20px 110px; background: #1c1c1e; color: #ff3b30; border: none; border-radius: 14px; padding: 15px; font-size: 15px; font-weight: 600; cursor: pointer; width: calc(100% - 40px); }
+/* DETAIL */
+.detail-header { display:flex;align-items:center;padding:16px 20px;gap:12px; }
+.back-btn { background:#1c1c1e;border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center; }
+.detail-header-title { font-size:17px;font-weight:600;flex:1; }
+.detail-heart-btn { background:#1c1c1e;border:none;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer; }
+.detail-hero { margin:0 20px;height:220px;background:#1c1c1e;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:100px; }
+.detail-thumbs { display:flex;gap:10px;padding:12px 20px;overflow-x:auto;scrollbar-width:none; }
+.detail-thumbs::-webkit-scrollbar { display:none; }
+.thumb { min-width:64px;height:64px;background:#1c1c1e;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:28px;border:2px solid transparent;cursor:pointer;transition:border-color 0.2s; }
+.thumb.sel { border-color:#4cd964; }
+.detail-body { padding:4px 20px 0; }
+.detail-pname { font-size:24px;font-weight:700;margin-bottom:4px; }
+.detail-seller-row { display:flex;align-items:center;gap:6px;margin-bottom:10px; }
+.seller-dot { width:7px;height:7px;background:#4cd964;border-radius:50%; }
+.detail-seller-name { font-size:13px;color:#888; }
+.verified { font-size:11px;color:#4cd964;margin-left:auto; }
+.detail-price { font-size:30px;font-weight:700;color:#4cd964;margin-bottom:12px; }
+.detail-desc { font-size:13px;color:#aaa;line-height:1.6;margin-bottom:14px; }
+.tags { display:flex;gap:7px;flex-wrap:wrap;margin-bottom:20px; }
+.tag { background:#1c1c1e;border-radius:20px;padding:5px 12px;font-size:11px;color:#888; }
+.add-btn { margin:0 20px 110px;background:#4cd964;color:#000;border:none;border-radius:16px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;width:calc(100% - 40px);transition:transform 0.15s; }
+.add-btn:active { transform:scale(0.97); }
+
+/* LEARN */
+.hero-banner { margin-bottom:16px;background:linear-gradient(135deg,#7c3aed,#a855f7,#3b82f6);height:200px;position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:20px;flex-shrink:0;cursor:pointer; }
+.hero-banner-deco { position:absolute;right:20px;top:10px;font-size:100px;opacity:0.4; }
+.hero-label { display:inline-block;background:rgba(255,255,255,0.2);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;letter-spacing:0.5px;margin-bottom:6px; }
+.hero-title { font-size:26px;font-weight:800;margin-bottom:3px; }
+.hero-author { font-size:13px;color:rgba(255,255,255,0.75); }
+.section-title { font-size:18px;font-weight:700;padding:0 20px;margin-bottom:10px; }
+.course-list { display:flex;flex-direction:column;gap:10px;padding:0 20px 110px; }
+.course-card { background:#1c1c1e;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:transform 0.15s; }
+.course-card:active { transform:scale(0.97); }
+.course-icon { width:52px;height:52px;background:#2c2c2e;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0; }
+.course-info { flex:1; }
+.course-name { font-size:15px;font-weight:600;margin-bottom:3px; }
+.course-author { font-size:12px;color:#888;margin-bottom:5px; }
+.course-meta { display:flex;gap:10px;font-size:11px;color:#666; }
+.play-btn { width:36px;height:36px;background:#a855f7;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;border:none;cursor:pointer;color:#fff; }
+
+/* TRANSF */
+.scanner-btn { margin:6px 20px 16px;background:linear-gradient(135deg,#f97316,#ef4444);border-radius:16px;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border:none;color:#fff;width:calc(100% - 40px);transition:transform 0.15s; }
+.scanner-btn:active { transform:scale(0.97); }
+.scanner-title { font-size:20px;font-weight:800;margin-bottom:3px; }
+.scanner-sub { font-size:12px;opacity:0.8; }
+.scanner-icon { font-size:36px; }
+.project-grid { display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 20px 110px; }
+.project-card { background:#1c1c1e;border-radius:16px;padding:16px 14px 14px;cursor:pointer;transition:transform 0.15s; }
+.project-card:active { transform:scale(0.96); }
+.project-icon { width:52px;height:52px;background:#2c2c2e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:10px; }
+.project-name { font-size:15px;font-weight:600;margin-bottom:8px; }
+.project-footer { display:flex;align-items:center;justify-content:space-between; }
+.difficulty { font-size:11px;font-weight:600;border-radius:20px;padding:3px 10px; }
+.diff-easy { background:#166534;color:#4cd964; }
+.diff-med { background:#713f12;color:#f59e0b; }
+.diff-hard { background:#7f1d1d;color:#f87171; }
+.bookmarks-count { font-size:11px;color:#666; }
+
+/* PERFIL */
+.login-wrap { display:flex;flex-direction:column;align-items:center;padding:30px 30px;gap:12px; }
+.login-avatar { font-size:70px;margin-bottom:8px; }
+.login-title { font-size:24px;font-weight:700; }
+.login-sub { font-size:14px;color:#777;text-align:center;margin-bottom:8px; }
+.input-field { width:100%;background:#1c1c1e;border:1.5px solid #333;border-radius:14px;padding:14px 16px;font-size:15px;color:#fff;outline:none;transition:border-color 0.2s; }
+.input-field:focus { border-color:#4cd964; }
+.login-btn { width:100%;background:#4cd964;color:#000;border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px;transition:opacity 0.2s; }
+.login-btn:disabled { opacity:0.6;cursor:default; }
+.or-divider { display:flex;align-items:center;gap:10px;width:100%;color:#555;font-size:13px; }
+.or-divider::before,.or-divider::after { content:'';flex:1;height:1px;background:#333; }
+.google-btn { width:100%;background:#1c1c1e;color:#fff;border:1.5px solid #333;border-radius:14px;padding:14px 16px;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:border-color 0.2s; }
+.google-btn:hover { border-color:#666; }
+.toggle-auth { font-size:13px;color:#4cd964;cursor:pointer;background:none;border:none;margin-top:4px; }
+.auth-error { font-size:12px;color:#ff3b30;text-align:center;min-height:16px; }
+
+.profile-header { display:flex;flex-direction:column;align-items:center;padding:24px 20px 16px;gap:6px; }
+.profile-avatar-big { width:88px;height:88px;background:linear-gradient(135deg,#0d4d28,#4cd964);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px;margin-bottom:4px; }
+.profile-name { font-size:22px;font-weight:700; }
+.profile-handle { font-size:13px;color:#777; }
+.profile-stats { display:flex;margin:10px 20px;background:#1c1c1e;border-radius:16px;overflow:hidden; }
+.stat-item { flex:1;text-align:center;padding:14px 10px; }
+.stat-item:not(:last-child) { border-right:1px solid #2c2c2e; }
+.stat-val { font-size:20px;font-weight:700;color:#4cd964; }
+.stat-label { font-size:11px;color:#777;margin-top:2px; }
+.profile-section { margin:6px 20px; }
+.profile-section-title { font-size:12px;color:#777;font-weight:600;letter-spacing:0.5px;margin-bottom:8px;text-transform:uppercase; }
+.profile-item { background:#1c1c1e;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:8px;cursor:pointer; }
+.profile-item-icon { font-size:20px;width:24px;text-align:center; }
+.profile-item-label { font-size:15px;flex:1; }
+.profile-item-arrow { color:#555;font-size:14px; }
+.logout-btn { margin:10px 20px 110px;background:#1c1c1e;color:#ff3b30;border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:600;cursor:pointer;width:calc(100% - 40px); }
 </style>
 </head>
 <body>
 
-<!-- SHOP -->
-<div class="screen active" id="screen-shop">
+<!-- LOADING -->
+<div class="loading-overlay" id="loading">
+  <div class="loading-logo">🛍️</div>
+  <div class="loading-text">Marketplace</div>
+  <div class="loading-sub">Cargando...</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ===== SHOP ===== -->
+<div class="screen" id="screen-shop">
   <div class="app-header">
     <div class="header-row">
       <div><div class="page-title">Marketplace</div></div>
       <div class="header-icons">
         <button class="icon-btn">🔍</button>
-        <button class="icon-btn">👤</button>
+        <button class="icon-btn" onclick="switchTab('perfil')">👤</button>
       </div>
     </div>
   </div>
   <div class="impact-card">
     <div class="impact-label">🌿 Impacto Local</div>
-    <div class="impact-amount">$12,450</div>
+    <div class="impact-amount" id="impact-amount">$12,450</div>
     <div class="impact-sub">invertidos</div>
     <div class="impact-deco">🌿</div>
   </div>
@@ -195,12 +256,12 @@
   </nav>
 </div>
 
-<!-- LEARN -->
+<!-- ===== LEARN ===== -->
 <div class="screen" id="screen-learn">
   <div class="app-header">
     <div class="header-row">
       <div><div class="section-label">Academia</div></div>
-      <div class="header-icons"><button class="icon-btn">🔍</button><button class="icon-btn">👤</button></div>
+      <div class="header-icons"><button class="icon-btn">🔍</button><button class="icon-btn" onclick="switchTab('perfil')">👤</button></div>
     </div>
   </div>
   <div class="hero-banner" onclick="openCourse({name:'Reparar Ropa',author:'Ana López',icon:'🧵',duration:'3 hrs',level:'Básico',desc:'Aprende las técnicas esenciales para reparar y remendar todo tipo de ropa. Desde costuras básicas hasta parches decorativos.'})">
@@ -239,15 +300,15 @@
   </nav>
 </div>
 
-<!-- TRANSF -->
+<!-- ===== TRANSF ===== -->
 <div class="screen" id="screen-transf">
   <div class="app-header">
     <div class="header-row">
       <div><div class="section-label">Reciclaje</div><div class="page-title">Lab de Reciclaje</div><div class="page-subtitle">Ingeniería aplicada al residuo</div></div>
-      <div class="header-icons"><button class="icon-btn">🔍</button><button class="icon-btn">👤</button></div>
+      <div class="header-icons"><button class="icon-btn">🔍</button><button class="icon-btn" onclick="switchTab('perfil')">👤</button></div>
     </div>
   </div>
-  <button class="scanner-btn" onclick="alert('📷 Escáner IA\n\nAquí se abriría la cámara para identificar el tipo de material reciclable.')">
+  <button class="scanner-btn" onclick="showToast('📷 Escáner IA — disponible en la app instalada')">
     <div style="text-align:left;"><div class="scanner-title">Escáner IA</div><div class="scanner-sub">Identifica PET, HDPE, PVC...</div></div>
     <div class="scanner-icon">📷</div>
   </button>
@@ -284,7 +345,7 @@
   </nav>
 </div>
 
-<!-- PERFIL -->
+<!-- ===== PERFIL ===== -->
 <div class="screen" id="screen-perfil">
   <div class="app-header">
     <div class="header-row">
@@ -293,30 +354,42 @@
     </div>
   </div>
 
-  <!-- LOGIN -->
-  <div id="login-state">
+  <!-- LOGIN / REGISTER -->
+  <div id="auth-state">
     <div class="login-wrap">
       <div class="login-avatar">👤</div>
-      <div class="login-title">Bienvenido</div>
-      <div class="login-sub">Crea tu cuenta para acceder a tu perfil y actividad</div>
-      <input class="input-field" id="inp-name" type="text" placeholder="Tu nombre completo" />
+      <div class="login-title" id="auth-title">Iniciar sesión</div>
+      <div class="login-sub">Accede a tu cuenta para ver tu perfil y actividad</div>
+
+      <div id="register-name-wrap" style="display:none;width:100%;">
+        <input class="input-field" id="inp-name" type="text" placeholder="Tu nombre completo" />
+      </div>
       <input class="input-field" id="inp-email" type="email" placeholder="Correo electrónico" />
       <input class="input-field" id="inp-pass" type="password" placeholder="Contraseña" />
-      <button class="login-btn" onclick="doLogin()">Iniciar sesión</button>
+      <div class="auth-error" id="auth-error"></div>
+      <button class="login-btn" id="auth-btn" onclick="doAuth()">Iniciar sesión</button>
+
+      <div class="or-divider">o</div>
+      <button class="google-btn" onclick="doGoogleLogin()">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.8 2.5 30.2 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.8 6C12.4 13.3 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4 6.9-10 6.9-17z"/><path fill="#FBBC05" d="M10.5 28.7A14.8 14.8 0 0 1 9.5 24c0-1.6.3-3.2.8-4.7l-7.8-6A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.7 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.5-5.8c-2 1.4-4.6 2.2-7.7 2.2-6.2 0-11.5-4.2-13.4-9.8l-7.8 6C6.6 42.6 14.6 48 24 48z"/></svg>
+        Continuar con Google
+      </button>
+
+      <button class="toggle-auth" id="toggle-auth-btn" onclick="toggleAuthMode()">¿No tienes cuenta? Regístrate</button>
     </div>
   </div>
 
-  <!-- LOGGED -->
+  <!-- LOGGED IN -->
   <div id="logged-state" style="display:none;">
     <div class="profile-header">
-      <div class="profile-avatar-big">👤</div>
+      <div class="profile-avatar-big" id="profile-avatar-emoji">👤</div>
       <div class="profile-name" id="prof-name">Usuario</div>
       <div class="profile-handle" id="prof-handle">@usuario</div>
     </div>
     <div class="profile-stats">
-      <div class="stat-item"><div class="stat-val">12</div><div class="stat-label">Compras</div></div>
-      <div class="stat-item"><div class="stat-val">5</div><div class="stat-label">Cursos</div></div>
-      <div class="stat-item"><div class="stat-val">8</div><div class="stat-label">Proyectos</div></div>
+      <div class="stat-item"><div class="stat-val" id="stat-compras">0</div><div class="stat-label">Compras</div></div>
+      <div class="stat-item"><div class="stat-val" id="stat-cursos">0</div><div class="stat-label">Cursos</div></div>
+      <div class="stat-item"><div class="stat-val" id="stat-proyectos">0</div><div class="stat-label">Proyectos</div></div>
     </div>
     <div class="profile-section" style="margin-top:14px;">
       <div class="profile-section-title">Mi cuenta</div>
@@ -341,28 +414,247 @@
 </div>
 
 <script>
+// ============================================================
+// 🔥 FIREBASE CONFIGURATION
+// ⬇️ REPLACE with your own Firebase project credentials
+// Go to: console.firebase.google.com → Project Settings → Your Apps
+// ============================================================
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+// Initialize Firebase
+let app, auth, db;
+let firebaseReady = false;
+
+try {
+  app = firebase.initializeApp(firebaseConfig);
+  auth = firebase.auth();
+  db = firebase.firestore();
+  firebaseReady = true;
+} catch(e) {
+  console.warn('Firebase not configured yet:', e.message);
+}
+
+// ============================================================
+// DATA
+// ============================================================
 const products = [
   {id:1,name:"Macetas de Cerámica",seller:"María Artesana",price:"$180",category:"Artesanías",emoji:"🏺",thumbs:["🏺","🫙","🪴","🎨"],desc:"Hermosas macetas hechas a mano con arcilla local. Cada pieza es única, horneada en horno tradicional. Perfectas para interior y exterior.",tags:["Hecho a mano","Arcilla local","Único","Artesanal"]},
   {id:2,name:"Miel Orgánica Local",seller:"Apiario Verde",price:"$95",category:"Comida",emoji:"🍯",thumbs:["🍯","🌻","🐝","🌿"],desc:"Miel 100% orgánica extraída de colmenas locales. Sin procesar, con todos sus nutrientes naturales intactos. Sabor floral y suave.",tags:["Orgánica","Sin procesar","Local","Natural"]},
-  {id:3,name:"Bolsas Tejidas",seller:"Telares del Sur",price:"$320",category:"Ropa",emoji:"👜",thumbs:["👜","🧶","🪡","🎀"],desc:"Bolsas tejidas a mano con técnicas ancestrales de telar. Materiales naturales de fibra resistente. Cada bolsa toma 3 días de trabajo.",tags:["Tejida a mano","Fibra natural","Ancestral","Durable"]},
+  {id:3,name:"Bolsas Tejidas",seller:"Telares del Sur",price:"$320",category:"Ropa",emoji:"👜",thumbs:["👜","🧶","🪡","🎀"],desc:"Bolsas tejidas a mano con técnicas ancestrales. Materiales naturales de fibra resistente. Cada bolsa toma 3 días de trabajo.",tags:["Tejida a mano","Fibra natural","Ancestral","Durable"]},
   {id:4,name:"Pan Artesanal",seller:"Horno Tradicional",price:"$65",category:"Comida",emoji:"🥖",thumbs:["🥖","🌾","🧁","🍞"],desc:"Pan de masa madre con granos locales y fermentación natural de 24 horas. Horneado en horno de leña, corteza crujiente.",tags:["Masa madre","Horno leña","Sin conservadores","Local"]}
 ];
 const courses = [
-  {name:"Muebles con Pallets",author:"Carlos Ruiz",icon:"🪑",duration:"2 hrs",level:"Intermedio",desc:"Aprende a construir muebles funcionales con pallets reciclados. Incluye técnicas de lijado, ensamblado y acabado natural."},
+  {name:"Muebles con Pallets",author:"Carlos Ruiz",icon:"🪑",duration:"2 hrs",level:"Intermedio",desc:"Aprende a construir muebles funcionales con pallets reciclados. Incluye lijado, ensamblado y acabado natural."},
   {name:"Electrónica Básica",author:"Tech María",icon:"⚡",duration:"1.5 hrs",level:"Básico",desc:"Fundamentos de electrónica para principiantes. Aprende a soldar, leer circuitos y reparar aparatos del hogar."},
-  {name:"Huerto en Casa",author:"Verde Jardín",icon:"🌱",duration:"1 hr",level:"Básico",desc:"Crea tu propio huerto urbano en espacios pequeños. Cultiva tus propias verduras y hierbas aromáticas fácilmente."}
+  {name:"Huerto en Casa",author:"Verde Jardín",icon:"🌱",duration:"1 hr",level:"Básico",desc:"Crea tu propio huerto urbano en espacios pequeños. Cultiva tus propias verduras y hierbas aromáticas."}
 ];
 const projects = [
   {id:1,name:"Lámpara PET",emoji:"💡",difficulty:"Fácil",diffClass:"diff-easy",bookmarks:89,desc:"Transforma botellas PET en una lámpara decorativa única. Materiales: botellas PET, cable eléctrico, foco LED y pegamento termofusible.",tags:["PET","Iluminación","Reciclaje"]},
   {id:2,name:"Mesa Neumáticos",emoji:"🛞",difficulty:"Medio",diffClass:"diff-med",bookmarks:156,desc:"Convierte neumáticos usados en una mesa de centro original. Limpiar, pintar, apilar y agregar superficie de vidrio o madera.",tags:["Neumáticos","Mueble","Upcycling"]},
-  {id:3,name:"Robot de Latas",emoji:"🤖",difficulty:"Avanzado",diffClass:"diff-hard",bookmarks:234,desc:"Construye un robot decorativo con latas recicladas. Requiere soldadura básica y creatividad para el diseño de las piezas.",tags:["Latas","Soldadura","Arte"]},
+  {id:3,name:"Robot de Latas",emoji:"🤖",difficulty:"Avanzado",diffClass:"diff-hard",bookmarks:234,desc:"Construye un robot decorativo con latas recicladas. Requiere soldadura básica y creatividad para el diseño.",tags:["Latas","Soldadura","Arte"]},
   {id:4,name:"Maceta Smart",emoji:"🌿",difficulty:"Medio",diffClass:"diff-med",bookmarks:178,desc:"Maceta con sensor de humedad usando material reciclado. Incluye Arduino básico y botella PET cortada para el contenedor.",tags:["Electrónica","PET","Jardín"]}
 ];
 
+// ============================================================
+// STATE
+// ============================================================
 let liked = {};
 let currentProduct = null;
 let currentFilter = 'Todo';
+let currentUser = null;
+let isRegisterMode = false;
+let cartCount = 0;
 
+// ============================================================
+// PWA: Service Worker Registration
+// ============================================================
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => console.log('SW registered:', reg.scope))
+      .catch(err => console.log('SW error:', err));
+  });
+}
+
+// ============================================================
+// FIREBASE AUTH LISTENER
+// ============================================================
+function initFirebaseAuth() {
+  if (!firebaseReady) { hideLoading(); return; }
+
+  auth.onAuthStateChanged(async (user) => {
+    hideLoading();
+    if (user) {
+      currentUser = user;
+      await loadUserProfile(user);
+      showLoggedState(user);
+    } else {
+      currentUser = null;
+      showAuthState();
+    }
+  });
+
+  // Load user favorites from Firestore
+  auth.onAuthStateChanged(user => {
+    if (user) loadFavorites(user.uid);
+  });
+}
+
+async function loadUserProfile(user) {
+  if (!firebaseReady) return;
+  try {
+    const doc = await db.collection('users').doc(user.uid).get();
+    if (doc.exists) {
+      const data = doc.data();
+      document.getElementById('prof-name').textContent = data.name || user.displayName || user.email;
+      document.getElementById('prof-handle').textContent = '@' + (data.name || user.displayName || user.email).toLowerCase().replace(/\s+/g,'').replace(/@.*$/,'');
+      document.getElementById('stat-compras').textContent = data.purchases || 0;
+      document.getElementById('stat-cursos').textContent = data.courses || 0;
+      document.getElementById('stat-proyectos').textContent = data.projects || 0;
+    } else {
+      const name = user.displayName || user.email.split('@')[0];
+      document.getElementById('prof-name').textContent = name;
+      document.getElementById('prof-handle').textContent = '@' + name.toLowerCase().replace(/\s+/g,'');
+    }
+  } catch(e) { console.warn('Could not load profile', e); }
+}
+
+async function loadFavorites(uid) {
+  if (!firebaseReady) return;
+  try {
+    const doc = await db.collection('users').doc(uid).get();
+    if (doc.exists && doc.data().favorites) {
+      liked = doc.data().favorites;
+      renderGrid(currentFilter);
+    }
+  } catch(e) {}
+}
+
+async function saveFavorites() {
+  if (!firebaseReady || !currentUser) return;
+  try {
+    await db.collection('users').doc(currentUser.uid).set({ favorites: liked }, { merge: true });
+  } catch(e) {}
+}
+
+// ============================================================
+// AUTH FUNCTIONS
+// ============================================================
+let authMode = 'login'; // 'login' | 'register'
+
+function toggleAuthMode() {
+  authMode = authMode === 'login' ? 'register' : 'login';
+  const isReg = authMode === 'register';
+  document.getElementById('auth-title').textContent = isReg ? 'Crear cuenta' : 'Iniciar sesión';
+  document.getElementById('auth-btn').textContent = isReg ? 'Crear cuenta' : 'Iniciar sesión';
+  document.getElementById('toggle-auth-btn').textContent = isReg ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate';
+  document.getElementById('register-name-wrap').style.display = isReg ? 'block' : 'none';
+  document.getElementById('auth-error').textContent = '';
+}
+
+async function doAuth() {
+  if (!firebaseReady) {
+    showToast('⚙️ Configura Firebase primero');
+    return;
+  }
+  const email = document.getElementById('inp-email').value.trim();
+  const pass = document.getElementById('inp-pass').value;
+  const name = document.getElementById('inp-name').value.trim();
+  const btn = document.getElementById('auth-btn');
+  const errEl = document.getElementById('auth-error');
+
+  if (!email || !pass) { errEl.textContent = 'Completa todos los campos'; return; }
+  if (authMode === 'register' && !name) { errEl.textContent = 'Ingresa tu nombre'; return; }
+
+  btn.disabled = true;
+  btn.textContent = authMode === 'register' ? 'Creando cuenta...' : 'Entrando...';
+  errEl.textContent = '';
+
+  try {
+    let userCred;
+    if (authMode === 'register') {
+      userCred = await auth.createUserWithEmailAndPassword(email, pass);
+      await userCred.user.updateProfile({ displayName: name });
+      await db.collection('users').doc(userCred.user.uid).set({
+        name, email, createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        purchases: 0, courses: 0, projects: 0, favorites: {}
+      });
+      showToast('✅ ¡Cuenta creada!');
+    } else {
+      userCred = await auth.signInWithEmailAndPassword(email, pass);
+      showToast('✅ ¡Bienvenido de vuelta!');
+    }
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = authMode === 'register' ? 'Crear cuenta' : 'Iniciar sesión';
+    const msgs = {
+      'auth/email-already-in-use': 'Este correo ya está registrado',
+      'auth/user-not-found': 'Correo no encontrado',
+      'auth/wrong-password': 'Contraseña incorrecta',
+      'auth/weak-password': 'La contraseña debe tener mínimo 6 caracteres',
+      'auth/invalid-email': 'Correo inválido',
+      'auth/too-many-requests': 'Demasiados intentos. Intenta más tarde'
+    };
+    errEl.textContent = msgs[e.code] || e.message;
+  }
+}
+
+async function doGoogleLogin() {
+  if (!firebaseReady) { showToast('⚙️ Configura Firebase primero'); return; }
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    const result = await auth.signInWithPopup(provider);
+    const user = result.user;
+    // Save to Firestore if new user
+    const doc = await db.collection('users').doc(user.uid).get();
+    if (!doc.exists) {
+      await db.collection('users').doc(user.uid).set({
+        name: user.displayName,
+        email: user.email,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        purchases: 0, courses: 0, projects: 0, favorites: {}
+      });
+    }
+    showToast('✅ ¡Bienvenido, ' + user.displayName + '!');
+  } catch(e) {
+    if (e.code !== 'auth/popup-closed-by-user')
+      document.getElementById('auth-error').textContent = 'Error al iniciar con Google';
+  }
+}
+
+async function doLogout() {
+  if (!firebaseReady) return;
+  await auth.signOut();
+  liked = {};
+  renderGrid(currentFilter);
+  showToast('👋 Sesión cerrada');
+}
+
+function showLoggedState(user) {
+  document.getElementById('auth-state').style.display = 'none';
+  document.getElementById('logged-state').style.display = 'block';
+  document.getElementById('perfil-settings').style.display = 'flex';
+}
+
+function showAuthState() {
+  document.getElementById('auth-state').style.display = 'block';
+  document.getElementById('logged-state').style.display = 'none';
+  document.getElementById('perfil-settings').style.display = 'none';
+  const btn = document.getElementById('auth-btn');
+  btn.disabled = false;
+  btn.textContent = 'Iniciar sesión';
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + id).classList.add('active');
@@ -370,7 +662,28 @@ function showScreen(id) {
 }
 function switchTab(tab) { showScreen(tab); }
 
+function hideLoading() {
+  const ol = document.getElementById('loading');
+  ol.classList.add('hidden');
+  setTimeout(() => ol.style.display = 'none', 400);
+  showScreen('shop');
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ============================================================
 // SHOP
+// ============================================================
 function renderGrid(filter) {
   const list = filter==='Todo' ? products : products.filter(p=>p.category===filter);
   document.getElementById('product-grid').innerHTML = list.map(p=>`
@@ -385,12 +698,22 @@ function renderGrid(filter) {
       </div>
     </div>`).join('');
 }
-function filterCat(btn,cat){
+
+function filterCat(btn,cat) {
   document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active'); currentFilter=cat; renderGrid(cat);
 }
-function toggleHeart(e,id){ e.stopPropagation(); liked[id]=!liked[id]; renderGrid(currentFilter); }
-function openProduct(id){
+
+async function toggleHeart(e,id) {
+  e.stopPropagation();
+  if (!currentUser) { showToast('🔒 Inicia sesión para guardar'); switchTab('perfil'); return; }
+  liked[id] = !liked[id];
+  renderGrid(currentFilter);
+  await saveFavorites();
+  showToast(liked[id] ? '❤️ Guardado en favoritos' : '🤍 Eliminado de favoritos');
+}
+
+function openProduct(id) {
   const p=products.find(x=>x.id===id); currentProduct=p;
   document.getElementById('d-title').textContent=p.name;
   document.getElementById('d-hero').textContent=p.emoji;
@@ -404,10 +727,35 @@ function openProduct(id){
   showScreen('detail');
 }
 function selThumb(el,e){document.querySelectorAll('.thumb').forEach(t=>t.classList.remove('sel'));el.classList.add('sel');document.getElementById('d-hero').textContent=e;}
-function toggleDetailHeart(){if(!currentProduct)return;liked[currentProduct.id]=!liked[currentProduct.id];document.getElementById('d-heart').textContent=liked[currentProduct.id]?'❤️':'🤍';}
-function addToCart(){const b=document.getElementById('add-cart-btn');b.textContent='✅ ¡Agregado!';b.style.background='#0a3d1f';b.style.color='#4cd964';setTimeout(()=>{b.textContent='🛒 Agregar al carrito';b.style.background='#4cd964';b.style.color='#000';},1800);}
+async function toggleDetailHeart(){
+  if(!currentProduct)return;
+  if(!currentUser){showToast('🔒 Inicia sesión para guardar');return;}
+  liked[currentProduct.id]=!liked[currentProduct.id];
+  document.getElementById('d-heart').textContent=liked[currentProduct.id]?'❤️':'🤍';
+  await saveFavorites();
+}
+async function addToCart(){
+  const b=document.getElementById('add-cart-btn');
+  b.textContent='✅ ¡Agregado!';b.style.background='#0a3d1f';b.style.color='#4cd964';
+  // Save purchase to Firestore
+  if(currentUser && firebaseReady && currentProduct){
+    try{
+      await db.collection('orders').add({
+        userId:currentUser.uid, product:currentProduct.name,
+        price:currentProduct.price, createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      const prev = parseInt(document.getElementById('stat-compras').textContent)||0;
+      await db.collection('users').doc(currentUser.uid).set({purchases:prev+1},{merge:true});
+      document.getElementById('stat-compras').textContent = prev+1;
+    }catch(e){}
+  }
+  setTimeout(()=>{b.textContent='🛒 Agregar al carrito';b.style.background='#4cd964';b.style.color='#000';},1800);
+  showToast('🛒 Producto agregado al carrito');
+}
 
+// ============================================================
 // LEARN
+// ============================================================
 function renderCourses(){
   document.getElementById('course-list').innerHTML=courses.map(c=>`
     <div class="course-card" onclick='openCourse(${JSON.stringify(c)})'>
@@ -431,9 +779,23 @@ function openCourse(c){
   document.getElementById('c-desc').textContent=c.desc;
   showScreen('course');
 }
-function startCourse(){const b=document.getElementById('course-btn');b.textContent='✅ ¡Inscrito!';setTimeout(()=>{b.textContent='▶ Comenzar curso';},1800);}
+async function startCourse(){
+  const b=document.getElementById('course-btn');
+  b.textContent='✅ ¡Inscrito!';
+  if(currentUser && firebaseReady){
+    try{
+      const prev=parseInt(document.getElementById('stat-cursos').textContent)||0;
+      await db.collection('users').doc(currentUser.uid).set({courses:prev+1},{merge:true});
+      document.getElementById('stat-cursos').textContent=prev+1;
+    }catch(e){}
+  }
+  showToast('🎓 ¡Inscrito al curso!');
+  setTimeout(()=>{b.textContent='▶ Comenzar curso';},1800);
+}
 
+// ============================================================
 // TRANSF
+// ============================================================
 function renderProjects(){
   document.getElementById('project-grid').innerHTML=projects.map(p=>`
     <div class="project-card" onclick="openProject(${p.id})">
@@ -441,7 +803,7 @@ function renderProjects(){
       <div class="project-name">${p.name}</div>
       <div class="project-footer">
         <span class="difficulty ${p.diffClass}">${p.difficulty}</span>
-        <span class="bookmarks">🔖 ${p.bookmarks}</span>
+        <span class="bookmarks-count">🔖 ${p.bookmarks}</span>
       </div>
     </div>`).join('');
 }
@@ -456,31 +818,33 @@ function openProject(id){
   document.getElementById('p-tags').innerHTML=p.tags.map(t=>`<div class="tag">${t}</div>`).join('');
   showScreen('project');
 }
-function startProject(){const b=document.getElementById('proj-btn');b.textContent='✅ ¡Guardado!';setTimeout(()=>{b.textContent='🔧 Ver instrucciones';},1800);}
-
-// PERFIL
-function doLogin(){
-  const name=document.getElementById('inp-name').value.trim();
-  const email=document.getElementById('inp-email').value.trim();
-  if(!name){document.getElementById('inp-name').focus();document.getElementById('inp-name').style.borderColor='#ff3b30';return;}
-  if(!email){document.getElementById('inp-email').focus();document.getElementById('inp-email').style.borderColor='#ff3b30';return;}
-  document.getElementById('prof-name').textContent=name;
-  document.getElementById('prof-handle').textContent='@'+name.toLowerCase().replace(/\s+/g,'');
-  document.getElementById('login-state').style.display='none';
-  document.getElementById('logged-state').style.display='block';
-  document.getElementById('perfil-settings').style.display='flex';
-}
-function doLogout(){
-  document.getElementById('login-state').style.display='block';
-  document.getElementById('logged-state').style.display='none';
-  document.getElementById('perfil-settings').style.display='none';
-  ['inp-name','inp-email','inp-pass'].forEach(id=>{const el=document.getElementById(id);el.value='';el.style.borderColor='#333';});
+async function startProject(){
+  const b=document.getElementById('proj-btn');
+  b.textContent='✅ ¡Guardado!';
+  if(currentUser && firebaseReady){
+    try{
+      const prev=parseInt(document.getElementById('stat-proyectos').textContent)||0;
+      await db.collection('users').doc(currentUser.uid).set({projects:prev+1},{merge:true});
+      document.getElementById('stat-proyectos').textContent=prev+1;
+    }catch(e){}
+  }
+  showToast('♻️ Proyecto guardado');
+  setTimeout(()=>{b.textContent='🔧 Ver instrucciones';},1800);
 }
 
+// ============================================================
 // INIT
-renderGrid('Todoh');
+// ============================================================
+renderGrid('Todo');
 renderCourses();
 renderProjects();
+
+// Start Firebase auth or just show app
+if (firebaseReady) {
+  initFirebaseAuth();
+} else {
+  setTimeout(hideLoading, 1000);
+}
 </script>
 </body>
 </html>
